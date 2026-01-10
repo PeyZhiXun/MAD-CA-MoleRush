@@ -3,7 +3,8 @@ package np.ict.mad.peyzhixun.ca
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import np.ict.mad.peyzhixun.ca.feature.game.GameScreen
+import androidx.navigation.compose.rememberNavController
+import np.ict.mad.peyzhixun.ca.navigation.AppNav
 import np.ict.mad.peyzhixun.ca.ui.theme.ContinuousAssessmentPeyZhiXunTheme
 
 class MainActivity : ComponentActivity() {
@@ -12,7 +13,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ContinuousAssessmentPeyZhiXunTheme {
-                GameScreen()
+                val navController = rememberNavController()
+                AppNav(navController)
             }
         }
     }
