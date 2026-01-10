@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
 
                 val prefs = LoginPreferences(this)
 
-                // Start at GAME if user selected Remember Me before, else LOGIN
+                //Start at the game if user selected Remember Me
                 val startDestination =
                     if (prefs.isRemembered()) Routes.GAME else Routes.LOGIN
 

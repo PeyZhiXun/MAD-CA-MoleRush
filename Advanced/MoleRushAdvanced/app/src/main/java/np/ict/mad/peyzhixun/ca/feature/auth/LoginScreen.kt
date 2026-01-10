@@ -64,9 +64,9 @@ fun LoginScreen(
 
                 // LOGO
                 Image(
-                    painter = painterResource(id = R.drawable.logo),
+                    painter = painterResource(id = R.drawable.molelogo),
                     contentDescription = "MoleRush Logo",
-                    modifier = Modifier.size(140.dp)
+                    modifier = Modifier.size(200.dp)
                 )
 
                 Spacer(Modifier.height(8.dp))

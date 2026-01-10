@@ -65,7 +65,7 @@ fun RegisterScreen(
 
                 // LOGO
                 Image(
-                    painter = painterResource(id = R.drawable.logo),
+                    painter = painterResource(id = R.drawable.molelogo),
                     contentDescription = "MoleRush Logo",
                     modifier = Modifier.size(140.dp)
                 )

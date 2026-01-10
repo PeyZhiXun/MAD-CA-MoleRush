@@ -13,7 +13,7 @@ class LoginManager(private val userDb: UserDatabaseHelper) {
                 displayName = displayName.trim()
             )
         )
-        return null // success
+        return null //success
     }
 
     suspend fun loginUser(email: String, password: String): UserEntity? {
