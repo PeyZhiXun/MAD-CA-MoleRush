@@ -2,48 +2,53 @@ package np.ict.mad.peyzhixun.ca.feature.game
 
 import android.content.Context
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GameScreen(
     onOpenHighScore: () -> Unit
 ) {
-
-    //Get context to use SharedPreferences later
     val context = LocalContext.current
 
-    // Game states
-    var score by remember { mutableStateOf(0) }          //current score
-    var highScore by remember { mutableStateOf(loadHighScore(context)) } //saved high score
-    var timeLeft by remember { mutableStateOf(30) }      //countdown timer
-    var isRunning by remember { mutableStateOf(false) }  //whether game is running
-    var moleIndex by remember { mutableStateOf(-1) }     //position of mole (0–8)
+    var score by remember { mutableStateOf(0) }
+    var timeLeft by remember { mutableStateOf(30) }
+    var moleIndex by remember { mutableStateOf(0) }
+    var isRunning by remember { mutableStateOf(false) }
 
-    //Timer logic: runs only when game is started
+    var highScore by remember { mutableStateOf(loadHighScore(context)) }
+
+    //Start/Restart
+    fun startOrRestart() {
+        score = 0
+        timeLeft = 30
+        moleIndex = Random.nextInt(9)
+        isRunning = true
+    }
+
+    //Timer
     LaunchedEffect(isRunning) {
         if (isRunning) {
-            timeLeft = 30
-            score = 0
-
-            //Countdown every second
-            while (timeLeft > 0 && isRunning) {
+            while (timeLeft > 0) {
                 delay(1000)
                 timeLeft--
             }
 
-            //Game ends when timer reaches 0
             isRunning = false
-            moleIndex = -1
 
-            //Save high score if current score is higher
+            //Update high score on game end
             if (score > highScore) {
                 highScore = score
                 saveHighScore(context, highScore)
@@ -51,129 +56,127 @@ fun GameScreen(
         }
     }
 
-    //Mole movement - randomly changes position
+    //Mole movement
     LaunchedEffect(isRunning) {
         while (isRunning) {
-            moleIndex = Random.nextInt(9) // random hole from 0 to 8
-            delay(700)  // mole moves every 0.7 seconds
+            delay(Random.nextLong(700, 1001))
+            moleIndex = Random.nextInt(9)
         }
     }
 
-    //Main UI layout
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(20.dp),
-        contentAlignment = Alignment.Center
+            .padding(16.dp)
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-
-            Text(
-                text = "MoleRush (Basic)",
-                style = MaterialTheme.typography.headlineSmall
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            //Display timer, score and high score
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Time: $timeLeft")
-                Text("Score: $score")
-                Text("High: $highScore")
+        TopAppBar(
+            title = { Text("Wack-a-Mole", fontWeight = FontWeight.SemiBold) },
+            actions = {
+                IconButton(onClick = onOpenHighScore) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "High Scores"
+                    )
+                }
             }
+        )
 
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
-            //3x3 game grid using rows
-            Column(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                for (row in 0..2) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        for (col in 0..2) {
-                            val index = row * 3 + col
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Score: $score", fontWeight = FontWeight.Medium)
+            Text("Time: $timeLeft", fontWeight = FontWeight.Medium)
+        }
 
-                            MoleCell(
-                                isMole = (index == moleIndex),
-                                enabled = isRunning,
-                                onHit = {
-                                    // Increase score only if mole is hit
-                                    if (index == moleIndex) {
-                                        score++
-                                        moleIndex = -1 // hide mole after hit
-                                    }
+        Spacer(Modifier.height(6.dp))
+        Text("High Score: $highScore")
+
+        Spacer(Modifier.height(18.dp))
+
+        //3x3 grid
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            for (row in 0..2) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    for (col in 0..2) {
+                        val index = row * 3 + col
+
+                        HoleButton(
+                            isMole = isRunning && index == moleIndex,
+                            enabled = isRunning,
+                            onClick = {
+                                if (isRunning && index == moleIndex) {
+                                    score++
                                 }
-                            )
-                        }
+                            }
+                        )
                     }
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(20.dp))
+        Spacer(Modifier.height(24.dp))
 
-            //Start game button (also works like restart)
-            Button(
-                onClick = { isRunning = true },
-                enabled = !isRunning,
+        Button(
+            onClick = { startOrRestart() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(if (isRunning) "Restart" else "Start")
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        //Game over
+        if (!isRunning && timeLeft == 0) {
+            Text(
+                text = "Game Over! Final score: $score",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Start Game")
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            //Go to High Score screen (navigation proof)
-            OutlinedButton(
-                onClick = { onOpenHighScore() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("High Score")
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            //Game over message
-            if (!isRunning && timeLeft == 0) {
-                Text(
-                    text = "Game Over! Your score: $score",
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
+            )
         }
     }
 }
 
 @Composable
-private fun MoleCell(
+private fun HoleButton(
     isMole: Boolean,
     enabled: Boolean,
-    onHit: () -> Unit
+    onClick: () -> Unit
 ) {
-    //Each cell is a button and the mole is shown using a simple text "M"
     Button(
-        onClick = onHit,
+        onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.size(90.dp)
+        modifier = Modifier.size(90.dp),
+        shape = CircleShape,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            disabledContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            disabledContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        ),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
     ) {
-        Text(if (isMole) "M" else "")
+        Text(
+            text = if (isMole) "M" else "",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 
-//Load saved high score from SharedPreferences
+//SharedPreferences
 fun loadHighScore(context: Context): Int {
     val prefs = context.getSharedPreferences("mole_rush_basic", Context.MODE_PRIVATE)
     return prefs.getInt("high_score", 0)
 }
 
-//Save high score to SharedPreferences
 fun saveHighScore(context: Context, score: Int) {
     val prefs = context.getSharedPreferences("mole_rush_basic", Context.MODE_PRIVATE)
     prefs.edit().putInt("high_score", score).apply()
