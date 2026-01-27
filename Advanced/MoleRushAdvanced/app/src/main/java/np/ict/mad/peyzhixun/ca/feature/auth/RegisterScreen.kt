@@ -63,7 +63,7 @@ fun RegisterScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                // LOGO
+                //logo
                 Image(
                     painter = painterResource(id = R.drawable.molelogo),
                     contentDescription = "MoleRush Logo",

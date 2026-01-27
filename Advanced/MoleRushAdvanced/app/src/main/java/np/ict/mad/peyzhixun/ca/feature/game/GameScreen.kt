@@ -3,8 +3,7 @@ package np.ict.mad.peyzhixun.ca.feature.game
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -38,14 +37,12 @@ fun GameScreen(
     val scoreDb = remember { db.scoreDb() }
     val prefs = remember { LoginPreferences(context) }
 
-    //Game states
     var score by remember { mutableStateOf(0) }
     var timeLeft by remember { mutableStateOf(30) }
     var isRunning by remember { mutableStateOf(false) }
     var moleIndex by remember { mutableStateOf(-1) }
     var showGameOver by remember { mutableStateOf(false) }
 
-    //Advanced: show best scores from Room
     var yourBest by remember { mutableStateOf(0) }
     var globalBest by remember { mutableStateOf(0) }
 
@@ -60,25 +57,28 @@ fun GameScreen(
         if (userId != -1) refreshBests()
     }
 
-    //Timer logic
+    fun startOrRestart() {
+        showGameOver = false
+        timeLeft = 30
+        score = 0
+        moleIndex = Random.nextInt(9)
+        isRunning = true
+    }
+
+    //Timer
     LaunchedEffect(isRunning) {
         if (isRunning) {
-            showGameOver = false
-            timeLeft = 30
-            score = 0
-
             while (timeLeft > 0 && isRunning) {
                 delay(1000)
                 timeLeft--
             }
 
-            //Game ends
             if (timeLeft == 0) {
                 isRunning = false
                 moleIndex = -1
                 showGameOver = true
 
-                //Save score into Room (advanced requirement)
+                //Save score into Room
                 scope.launch {
                     if (userId != -1) {
                         scoreDb.addScore(
@@ -99,7 +99,7 @@ fun GameScreen(
     LaunchedEffect(isRunning) {
         while (isRunning) {
             moleIndex = Random.nextInt(9)
-            delay(800) //0.8s is nice and playable
+            delay(800)
         }
     }
 
@@ -107,10 +107,7 @@ fun GameScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    //Logo beside MoleRush title
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painter = painterResource(id = R.drawable.molelogo),
                             contentDescription = "MoleRush Logo",
@@ -122,17 +119,7 @@ fun GameScreen(
                 },
                 actions = {
                     IconButton(onClick = { navController.navigate(Routes.HIGH_SCORE) }) {
-                        Icon(Icons.Filled.EmojiEvents, contentDescription = "High Scores")
-                    }
-                    IconButton(
-                        onClick = {
-                            prefs.clear()
-                            navController.navigate(Routes.LOGIN) {
-                                popUpTo(Routes.GAME) { inclusive = true }
-                            }
-                        }
-                    ) {
-                        Icon(Icons.Filled.Logout, contentDescription = "Logout")
+                        Icon(Icons.Filled.Settings, contentDescription = "High Scores")
                     }
                 }
             )
@@ -179,7 +166,7 @@ fun GameScreen(
 
             Spacer(Modifier.height(14.dp))
 
-            //3x3 grid using Rows
+            //3x3 grid
             Column(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -189,20 +176,18 @@ fun GameScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         for (col in 0..2) {
                             val index = row * 3 + col
-                            val isMole = index == moleIndex
+                            val isMole = isRunning && index == moleIndex
 
                             ElevatedButton(
                                 onClick = {
                                     if (isRunning && isMole) {
                                         score++
-                                        moleIndex = -1
                                     }
                                 },
                                 enabled = isRunning,
                                 modifier = Modifier.size(95.dp),
-                                contentPadding = PaddingValues(0.dp) //
+                                contentPadding = PaddingValues(0.dp)
                             ) {
-                                // mole image
                                 if (isMole) {
                                     Image(
                                         painter = painterResource(id = R.drawable.molee),
@@ -219,11 +204,23 @@ fun GameScreen(
             Spacer(Modifier.height(16.dp))
 
             Button(
-                onClick = { isRunning = true },
-                enabled = !isRunning,
+                onClick = { startOrRestart() },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (showGameOver) "Restart" else "Start Game")
+                Text(if (isRunning) "Restart" else "Start Game")
+            }
+
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = {
+                    prefs.clear()
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.GAME) { inclusive = true }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Logout")
             }
 
             if (showGameOver) {
