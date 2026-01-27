@@ -91,12 +91,11 @@ var timeLeft by remember { mutableStateOf(30) }
 var isRunning by remember { mutableStateOf(false) }
 
 LaunchedEffect(isRunning) {
-    if (isRunning) {
-        timeLeft = 30
-        while (timeLeft > 0 && isRunning) {
-            delay(1000)
-            timeLeft--
-        }
+        if (isRunning) {
+            while (timeLeft > 0) {
+                delay(1000)
+                timeLeft--
+            }
         isRunning = false
     }
 }
@@ -119,12 +118,12 @@ The initial AI example the code was written inside an Activity and directly acce
 
 **Final improved version**
 ```
-private fun loadHighScore(context: Context): Int {
+fun loadHighScore(context: Context): Int {
     val prefs = context.getSharedPreferences("mole_rush_basic", Context.MODE_PRIVATE)
     return prefs.getInt("high_score", 0)
 }
 
-private fun saveHighScore(context: Context, score: Int) {
+fun saveHighScore(context: Context, score: Int) {
     val prefs = context.getSharedPreferences("mole_rush_basic", Context.MODE_PRIVATE)
     prefs.edit().putInt("high_score", score).apply()
 }
